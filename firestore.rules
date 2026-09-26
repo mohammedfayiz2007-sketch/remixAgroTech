@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validation helper for User Profile
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'name'])
+        && data.uid is string && data.uid.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (!('email' in data) || (data.email is string && data.email.size() <= 120))
+        && (!('location' in data) || (data.location is string && data.location.size() <= 120))
+        && (!('latitude' in data) || data.latitude is number)
+        && (!('longitude' in data) || data.longitude is number)
+        && (!('language' in data) || (data.language is string && data.language.size() <= 20))
+        && (!('isOnboarded' in data) || data.isOnboarded is bool);
+    }
+
+    // Validation helper for Tracked Plant
+    function isValidTrackedPlant(data) {
+      return data.keys().hasAll(['id', 'userId', 'customName', 'cropType'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.customName is string && data.customName.size() > 0 && data.customName.size() <= 100
+        && data.cropType is string && data.cropType.size() <= 60
+        && (!('plantName' in data) || (data.plantName is string && data.plantName.size() <= 80))
+        && (!('currentDisease' in data) || (data.currentDisease is string && data.currentDisease.size() <= 120))
+        && (!('currentSeverity' in data) || (data.currentSeverity is string && data.currentSeverity.size() <= 20))
+        && (!('currentHealthScore' in data) || data.currentHealthScore is number)
+        && (!('healthStatusLabel' in data) || (data.healthStatusLabel is string && data.healthStatusLabel.size() <= 30))
+        && (!('scans' in data) || (data.scans is list && data.scans.size() <= 200));
+    }
+
+    // Validation helper for Community Post
+    function isValidCommunityPost(data) {
+      return data.keys().hasAll(['id', 'authorId', 'authorName', 'title', 'content'])
+        && data.id is string && data.id.size() <= 128
+        && data.authorId is string && data.authorId.size() <= 128
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 100
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 2000
+        && (!('crop' in data) || (data.crop is string && data.crop.size() <= 60))
+        && (!('location' in data) || (data.location is string && data.location.size() <= 120))
+        && (!('likes' in data) || data.likes is number)
+        && (!('replies' in data) || (data.replies is list && data.replies.size() <= 200));
+    }
+
+    // Validation helper for Outbreak Reports
+    function isValidCommunityReport(data) {
+      return data.keys().hasAll(['id', 'diseaseName', 'crop', 'lat', 'lng'])
+        && data.id is string && data.id.size() <= 128
+        && data.diseaseName is string && data.diseaseName.size() <= 100
+        && data.crop is string && data.crop.size() <= 60
+        && data.lat is number && data.lng is number
+        && (!('reportsCount' in data) || data.reportsCount is number)
+        && (!('severity' in data) || (data.severity is string && data.severity.size() <= 20));
+    }
+
+    // Validation helper for Expert Consultations
+    function isValidExpertConsultation(data) {
+      return data.keys().hasAll(['id', 'userId', 'plantName', 'cropType', 'question'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.plantName is string && data.plantName.size() <= 80
+        && data.cropType is string && data.cropType.size() <= 60
+        && data.question is string && data.question.size() > 0 && data.question.size() <= 1000;
+    }
+
+    // Match /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidUserProfile(incoming());
+      allow delete: if isOwner(userId);
+
+      // Subcollection: /users/{userId}/plants/{plantId}
+      match /plants/{plantId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(plantId) && incoming().userId == userId && isValidTrackedPlant(incoming());
+        allow update: if isOwner(userId) && incoming().userId == userId && isValidTrackedPlant(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      // Subcollection: /users/{userId}/consultations/{consultationId}
+      match /consultations/{consultationId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(consultationId) && incoming().userId == userId && isValidExpertConsultation(incoming());
+        allow update: if isOwner(userId) && incoming().userId == userId;
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Match /communityPosts/{postId}
+    match /communityPosts/{postId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(postId) && incoming().authorId == request.auth.uid && isValidCommunityPost(incoming());
+      allow update: if isSignedIn() && isValidCommunityPost(incoming()) && (
+        request.auth.uid == existing().authorId ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'replies'])
+      );
+      allow delete: if isSignedIn() && request.auth.uid == existing().authorId;
+    }
+
+    // Match /communityReports/{reportId}
+    match /communityReports/{reportId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(reportId) && isValidCommunityReport(incoming());
+      allow update: if isSignedIn() && isValidCommunityReport(incoming());
+      allow delete: if false;
+    }
+  }
+}

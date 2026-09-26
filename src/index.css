@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #EDEDED;
+    background-color: #090C0A;
+  }
+}
+
+/* Custom smooth scroll and hide scrollbars where needed */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Neon glow utility classes */
+.shadow-neon {
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.35), 0 0 30px rgba(0, 255, 102, 0.15);
+}
+
+.shadow-neon-sm {
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+}
+
+.border-neon {
+  border-color: #00FF66;
+}
+
+/* Custom pulse animations with neon green */
+@keyframes radar-sweep {
+  0% { transform: translateY(-100%); opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { transform: translateY(220%); opacity: 0.1; }
+}
+
+.animate-radar {
+  animation: radar-sweep 1.8s ease-in-out infinite;
+}
+
+/* Neon shimmer keyframes for loading skeletons */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 102, 0.12) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+
+/* Gentle floating animation for Agro Bot mascot */
+@keyframes bot-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bot-float {
+  animation: bot-float 2.8s ease-in-out infinite;
+}

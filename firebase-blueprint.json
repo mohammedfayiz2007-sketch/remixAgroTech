@@ -1,0 +1,133 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with language and location preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 120 },
+        "location": { "type": "string", "maxLength": 120 },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "language": { "type": "string", "maxLength": 20 },
+        "isOnboarded": { "type": "boolean" },
+        "joinedDate": { "type": "string", "maxLength": 40 },
+        "createdAt": { "type": "string", "maxLength": 40 },
+        "updatedAt": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["uid", "name"]
+    },
+    "TrackedPlant": {
+      "title": "TrackedPlant",
+      "description": "A crop monitored by the farmer over time with diagnostic scans",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "customName": { "type": "string", "maxLength": 100 },
+        "cropType": { "type": "string", "maxLength": 60 },
+        "plantName": { "type": "string", "maxLength": 80 },
+        "icon": { "type": "string", "maxLength": 20 },
+        "currentDisease": { "type": "string", "maxLength": 120 },
+        "currentSeverity": { "type": "string", "maxLength": 20 },
+        "currentHealthScore": { "type": "number" },
+        "healthStatusLabel": { "type": "string", "maxLength": 30 },
+        "environmentTag": { "type": "string", "maxLength": 20 },
+        "lastScannedDate": { "type": "string", "maxLength": 40 },
+        "scans": { "type": "array" },
+        "dailyActionPlan": { "type": "object" },
+        "createdAt": { "type": "string", "maxLength": 40 },
+        "updatedAt": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["id", "userId", "customName", "cropType"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Agronomic forum post shared with other growers and specialists",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "authorId": { "type": "string", "maxLength": 128 },
+        "authorName": { "type": "string", "maxLength": 100 },
+        "authorRole": { "type": "string", "maxLength": 60 },
+        "location": { "type": "string", "maxLength": 120 },
+        "timeAgo": { "type": "string", "maxLength": 40 },
+        "title": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "crop": { "type": "string", "maxLength": 60 },
+        "diseaseTag": { "type": "string", "maxLength": 100 },
+        "imageUrl": { "type": "string", "maxLength": 50000 },
+        "likes": { "type": "number" },
+        "replies": { "type": "array" },
+        "createdAt": { "type": "string", "maxLength": 40 },
+        "updatedAt": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["id", "authorId", "authorName", "title", "content"]
+    },
+    "CommunityDiseaseReport": {
+      "title": "CommunityDiseaseReport",
+      "description": "Regional outbreak incident marker on the interactive epidemiology map",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "diseaseName": { "type": "string", "maxLength": 100 },
+        "crop": { "type": "string", "maxLength": 60 },
+        "reportsCount": { "type": "number" },
+        "severity": { "type": "string", "maxLength": 20 },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "locationName": { "type": "string", "maxLength": 120 },
+        "samplePhotoUrl": { "type": "string", "maxLength": 50000 },
+        "lastUpdated": { "type": "string", "maxLength": 40 },
+        "spreadAlert": { "type": "object" },
+        "createdAt": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["id", "diseaseName", "crop", "lat", "lng"]
+    },
+    "ExpertConsultation": {
+      "title": "ExpertConsultation",
+      "description": "Direct inquiry submitted to verified agronomists and extension specialists",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 40 },
+        "plantName": { "type": "string", "maxLength": 80 },
+        "cropType": { "type": "string", "maxLength": 60 },
+        "detectedDisease": { "type": "string", "maxLength": 120 },
+        "symptoms": { "type": "string", "maxLength": 1000 },
+        "location": { "type": "string", "maxLength": 120 },
+        "question": { "type": "string", "maxLength": 1000 },
+        "imageUrl": { "type": "string", "maxLength": 50000 },
+        "status": { "type": "string", "maxLength": 30 },
+        "expertResponse": { "type": "object" },
+        "createdAt": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["id", "userId", "plantName", "cropType", "question"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile with farm preferences"
+    },
+    "/users/{userId}/plants/{plantId}": {
+      "schema": "TrackedPlant",
+      "description": "Farmer's tracked crops and time-series diagnosis scans"
+    },
+    "/communityPosts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Farmer questions and discussions"
+    },
+    "/communityReports/{reportId}": {
+      "schema": "CommunityDiseaseReport",
+      "description": "Regional outbreak map coordinates and alerts"
+    },
+    "/users/{userId}/consultations/{consultationId}": {
+      "schema": "ExpertConsultation",
+      "description": "Consultation queries with university specialists"
+    }
+  }
+}
